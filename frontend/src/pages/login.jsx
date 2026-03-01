@@ -9,11 +9,14 @@ export default function Login() {
   const navigate = useNavigate();
   const validar = (e) => {
     e.preventDefault();
-      if(name.toLowerCase() === "root" && password === "1234"){
+      if(name.toLowerCase() === "david" && password === "1234"){
+           localStorage.setItem("user", name);
            alert("Bienvenido " + name);
            setTimeout(() => {
                navigate("/home")
            }, 100);
+          
+
       }else{
         console.log("Usuario o contraseña incorrectos");
       }
