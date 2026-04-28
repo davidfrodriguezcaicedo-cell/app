@@ -1,7 +1,7 @@
 
 import StatusBadge from "../activity/Statusbadge";
 import ProgressBar from "../activity/Progressbar";
-import { asideNavLinks, skillsByPeriod } from "../../data/activities";
+import { asideNavLinks, skillsByPeriod } from "../../data/Activities";
 
 export default function PeriodAside({ period, totalActivities, completedActivities, activeNav = "actividades", onNavChange }) {
   const pct = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
