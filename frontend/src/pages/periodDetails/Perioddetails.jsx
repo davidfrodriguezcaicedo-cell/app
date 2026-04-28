@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { periods } from "../../data/Periods";
-import { activitiesByPeriod } from "../../data/activities";
+import { activitiesByPeriod } from "../../data/Activities";
 import { PeriodAside, ActivityCard } from "../../components/period-detail";
 
 export default function PeriodDetail() {
