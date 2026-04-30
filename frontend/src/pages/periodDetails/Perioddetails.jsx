@@ -67,8 +67,7 @@ export default function PeriodDetail() {
         </nav>
 
         {/* ── Main layout ── */}
-        <div className="max-w-[1200px] mx-auto px-6 py-8 flex gap-7 items-start">
-
+        <div className="max-w-[1200px] mx-auto px-6 py-8 md:flex gap-7  ">
           {/* ── Aside ── */}
           <PeriodAside
             period={period}
@@ -79,12 +78,12 @@ export default function PeriodDetail() {
           />
 
           {/* ── Content area ── */}
-          <div className="flex-1 min-w-0 flex flex-col gap-6">
+          <div className="flex-1 min-w-0 flex flex-col gap-6 py-6">
 
             {/* Page header */}
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="font-['Lora',serif] text-slate-800 text-[clamp(1.5rem,2.5vw,2rem)] leading-tight">
+                <h1 className="font-['Lora',serif] text-slate-800 text-[clamp(1.5rem,2.5vw,2rem)] leading-tight text-center md:text-left">
                   Actividades del {period.title}
                 </h1>
                 <p className="text-slate-400 text-sm mt-1">

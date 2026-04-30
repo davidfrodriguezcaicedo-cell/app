@@ -8,7 +8,7 @@ export default function PeriodAside({ period, totalActivities, completedActiviti
   const skills = skillsByPeriod[period.id] ?? [];
 
   return (
-    <aside className="w-[280px] shrink-0 flex flex-col gap-4 font-['Nunito',sans-serif]">
+    <aside className="md:w-[280px]  flex flex-col gap-4 font-['Nunito',sans-serif] ">
 
       {/* ── Period header card ── */}
       <div className="rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,.08)]">
