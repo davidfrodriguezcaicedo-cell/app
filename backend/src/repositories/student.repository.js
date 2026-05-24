@@ -1,15 +1,11 @@
 const { pool } = require('../config/db');
 const Student = require('../models/student.model');
 
-/**
- * Repositorio de Estudiantes.
- * Única capa que interactúa directamente con la base de datos.
- * Todos los métodos retornan instancias de Student o arrays de Student.
- */
+
 class StudentRepository {
   /**
-   * Retorna todos los estudiantes con soporte de paginación y búsqueda.
-   * @param {object} options - { page, limit, search }
+  
+   * @param {object} options - 
    */
   async findAll({ page = 1, limit = 10, search = '' } = {}) {
     const offset = (page - 1) * limit;
@@ -63,10 +59,7 @@ class StudentRepository {
     return rows[0] ? new Student(rows[0]) : null;
   }
 
-  /**
-   * Busca un estudiante por ID incluyendo el hash de contraseña.
-   * Solo para uso interno en cambio de contraseña.
-   */
+  
   async findWithPasswordById(id) {
     const [rows] = await pool.query(
       'SELECT id, name, email, password, created_at, updated_at FROM students WHERE id = ?',
