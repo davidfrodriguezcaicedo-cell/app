@@ -5,7 +5,7 @@ const { testConnection } = require('./config/db');
 const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
-  // Primero verifica la conexión a la DB; si falla, el proceso termina
+  console.log('⏳ Conectando a la base de datos'); 
   await testConnection();
 
   app.listen(PORT, () => {

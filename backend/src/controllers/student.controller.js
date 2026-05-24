@@ -1,11 +1,7 @@
 const studentService = require('../services/student.service');
 const { sendSuccess } = require('../utils/response');
 
-/**
- * Controlador de Estudiantes.
- * Solo coordina req → service → res.
- * Toda la lógica de negocio y errores está en el Service.
- */
+
 class StudentController {
   async getAll(req, res, next) {
     try {
