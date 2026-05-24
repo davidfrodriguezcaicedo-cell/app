@@ -1,86 +1,110 @@
 const bcrypt = require('bcryptjs');
 const studentRepository = require('../repositories/student.repository');
+const ApiError = require('../utils/ApiError');
+const { requireFields, validatePassword } = require('../utils/validators');
 
 class StudentService {
-  async getAllStudents() {
-    return await studentRepository.findAll();
+  /**
+   * Retorna todos los estudiantes con soporte de paginación y búsqueda.
+   * Reenvía los query params al repositorio correctamente.
+   */
+  async getAllStudents(query = {}) {
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 10;
+    const search = query.search || '';
+    return await studentRepository.findAll({ page, limit, search });
   }
 
   async getStudentById(id) {
     const student = await studentRepository.findById(id);
     if (!student) {
-      const error = new Error('Estudiante no encontrado');
-      error.statusCode = 404;
-      throw error;
+      throw ApiError.notFound('Estudiante no encontrado');
     }
     return student;
   }
 
   async createStudent(data) {
-    const { full_name, email, password, phone, level, active } = data;
+    const { name, email, password } = data;
 
-    if (!full_name || !email || !password) {
-      const error = new Error('full_name, email y password son obligatorios');
-      error.statusCode = 400;
-      throw error;
-    }
+    requireFields({ name, email, password }, ['name', 'email', 'password']);
+    validatePassword(password);
 
     const exists = await studentRepository.findByEmail(email);
     if (exists) {
-      const error = new Error('Ya existe un estudiante con ese email');
-      error.statusCode = 400;
-      throw error;
+      throw ApiError.conflict('Ya existe un estudiante con ese email');
     }
 
-    const password_hash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     return await studentRepository.create({
-      full_name,
+      name,
       email,
-      password_hash,
-      phone,
-      level,
-      active,
+      password: hashedPassword,
     });
   }
 
   async updateStudent(id, data) {
     const student = await studentRepository.findById(id);
     if (!student) {
-      const error = new Error('Estudiante no encontrado');
-      error.statusCode = 404;
-      throw error;
+      throw ApiError.notFound('Estudiante no encontrado');
     }
 
-    const updateData = { ...data };
+    const { name, email } = data;
 
-    if (updateData.password) {
-      updateData.password_hash = await bcrypt.hash(updateData.password, 10);
-      delete updateData.password;
-    }
-
-    if (updateData.email && updateData.email !== student.email) {
-      const another = await studentRepository.findByEmail(updateData.email);
-      if (another && another.id !== Number(id)) {
-        const error = new Error('Ese email ya está en uso');
-        error.statusCode = 400;
-        throw error;
+    if (email && email !== student.email) {
+      const emailTaken = await studentRepository.existsByEmail(email, id);
+      if (emailTaken) {
+        throw ApiError.conflict('Ese email ya está en uso');
       }
     }
 
-    return await studentRepository.update(id, updateData);
+    const affectedRows = await studentRepository.update(id, {
+      name: name ?? student.name,
+      email: email ?? student.email,
+    });
+
+    if (affectedRows === 0) {
+      throw ApiError.internal('No se pudo actualizar el estudiante');
+    }
+
+    return await studentRepository.findById(id);
+  }
+
+  /**
+   * Cambia la contraseña de un estudiante verificando la contraseña actual.
+   */
+  async changePassword(id, { currentPassword, newPassword }) {
+    requireFields({ currentPassword, newPassword }, ['currentPassword', 'newPassword']);
+    validatePassword(newPassword);
+
+    const student = await studentRepository.findWithPasswordById(id);
+    if (!student) {
+      throw ApiError.notFound('Estudiante no encontrado');
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, student.password);
+    if (!isValid) {
+      throw ApiError.unauthorized('La contraseña actual es incorrecta');
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await studentRepository.updatePassword(id, hashed);
+
+    return { message: 'Contraseña actualizada correctamente' };
   }
 
   async deleteStudent(id) {
     const student = await studentRepository.findById(id);
     if (!student) {
-      const error = new Error('Estudiante no encontrado');
-      error.statusCode = 404;
-      throw error;
+      throw ApiError.notFound('Estudiante no encontrado');
     }
 
-    const deleted = await studentRepository.remove(id);
-    return deleted;
+    const affectedRows = await studentRepository.delete(id);
+    if (affectedRows === 0) {
+      throw ApiError.internal('No se pudo eliminar el estudiante');
+    }
+
+    return { message: 'Estudiante eliminado correctamente' };
   }
 }
 

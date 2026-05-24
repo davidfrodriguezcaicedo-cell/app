@@ -6,7 +6,10 @@ const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
   // Primero verifica la conexión a la DB; si falla, el proceso termina
-  await testConnection();
+  await testConnection().catch((err) => {
+    console.error('❌ No se pudo conectar a la base de datos. Terminando proceso.');
+    process.exit(1);
+  });
 
   app.listen(PORT, () => {
     console.log(`\n🚀 Servidor corriendo en http://localhost:${PORT}`);

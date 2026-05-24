@@ -14,6 +14,7 @@ const requireFields = (body, fields) => {
       `Los siguientes campos son obligatorios: ${missing.join(', ')}`
     );
   }
+
 };
 
 /**

@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+const { pool } = require('./config/db');
 const { errorHandler, notFoundHandler } = require('./middlewares/error.middleware');
 
 const app = express();
@@ -32,7 +33,6 @@ app.use(express.urlencoded({ extended: true }));
 // ─── Health check (público, sin auth) ────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
   try {
-    const { pool } = require('./config/db');
     await pool.query('SELECT 1');
     res.json({
       success: true,
