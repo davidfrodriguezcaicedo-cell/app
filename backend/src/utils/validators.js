@@ -17,9 +17,7 @@ const requireFields = (body, fields) => {
   
 };
 
-/**
- * Valida formato de email básico.
- */
+
 const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
@@ -27,9 +25,7 @@ const validateEmail = (email) => {
   }
 };
 
-/**
- * Valida longitud mínima de contraseña.
- */
+
 const validatePassword = (password, minLength = 6) => {
   if (password.length < minLength) {
     throw ApiError.badRequest(

@@ -57,17 +57,16 @@ app.use('/api/students', require('./routes/student.routes'));
 // ─── 404 para rutas de API no encontradas ────────────────────────────────────
 app.use('/api', notFoundHandler);
 
-// ─── Frontend estático (React build) ─────────────────────────────────────────
+
 const frontendPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));
 
-// Cualquier ruta no-API sirve el index.html (React Router)
-// Express 5 requiere wildcard con nombre: '/{*path}'
+
 app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
-// ─── Manejador global de errores (siempre al final) ──────────────────────────
+
 app.use(errorHandler);
 
 module.exports = app;

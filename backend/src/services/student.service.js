@@ -1,86 +1,120 @@
 const bcrypt = require('bcryptjs');
 const studentRepository = require('../repositories/student.repository');
+const ApiError = require('../utils/ApiError');
+const { requireFields, validateEmail } = require('../utils/validators');
 
 class StudentService {
-  async getAllStudents() {
-    return await studentRepository.findAll();
+  /**
+   * Retorna lista paginada de estudiantes con búsqueda opcional.
+   * Acepta query params: page, limit, search.
+   */
+  async getAllStudents(query = {}) {
+    const page = Math.max(1, parseInt(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(query.limit) || 10));
+    const search = query.search || '';
+    return await studentRepository.findAll({ page, limit, search });
   }
 
   async getStudentById(id) {
     const student = await studentRepository.findById(id);
     if (!student) {
-      const error = new Error('Estudiante no encontrado');
-      error.statusCode = 404;
-      throw error;
+      throw ApiError.notFound('Estudiante no encontrado');
     }
-    return student;
+    return student.toPublic();
   }
 
   async createStudent(data) {
-    const { full_name, email, password, phone, level, active } = data;
+    const { name, email, password } = data;
 
-    if (!full_name || !email || !password) {
-      const error = new Error('full_name, email y password son obligatorios');
-      error.statusCode = 400;
-      throw error;
-    }
+    // Validar campos obligatorios usando los helpers ya existentes
+    requireFields({ name, email, password }, ['name', 'email', 'password']);
+    validateEmail(email);
 
-    const exists = await studentRepository.findByEmail(email);
+    // Verificar duplicado de email
+    const exists = await studentRepository.findByEmail(email.toLowerCase().trim());
     if (exists) {
-      const error = new Error('Ya existe un estudiante con ese email');
-      error.statusCode = 400;
-      throw error;
+      throw ApiError.conflict('Ya existe un estudiante con ese email');
     }
 
-    const password_hash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    return await studentRepository.create({
-      full_name,
-      email,
-      password_hash,
-      phone,
-      level,
-      active,
+    const student = await studentRepository.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
     });
+
+    return student.toPublic();
   }
 
   async updateStudent(id, data) {
     const student = await studentRepository.findById(id);
     if (!student) {
-      const error = new Error('Estudiante no encontrado');
-      error.statusCode = 404;
-      throw error;
+      throw ApiError.notFound('Estudiante no encontrado');
     }
 
-    const updateData = { ...data };
+    const { name, email } = data;
 
-    if (updateData.password) {
-      updateData.password_hash = await bcrypt.hash(updateData.password, 10);
-      delete updateData.password;
-    }
+    // Validar campos obligatorios
+    requireFields({ name, email }, ['name', 'email']);
+    validateEmail(email);
 
-    if (updateData.email && updateData.email !== student.email) {
-      const another = await studentRepository.findByEmail(updateData.email);
+    // Verificar que el nuevo email no esté en uso por otro estudiante
+    if (email.toLowerCase().trim() !== student.email) {
+      const another = await studentRepository.findByEmail(email.toLowerCase().trim());
       if (another && another.id !== Number(id)) {
-        const error = new Error('Ese email ya está en uso');
-        error.statusCode = 400;
-        throw error;
+        throw ApiError.conflict('Ese email ya está en uso');
       }
     }
 
-    return await studentRepository.update(id, updateData);
+    await studentRepository.update(id, {
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+    });
+
+    // Retornar el estudiante actualizado
+    const updated = await studentRepository.findById(id);
+    return updated.toPublic();
+  }
+
+  /**
+   * PATCH /api/students/:id/password
+   * Cambia la contraseña de un estudiante verificando la contraseña actual.
+   */
+  async changePassword(id, data) {
+    const { currentPassword, newPassword } = data;
+
+    requireFields({ currentPassword, newPassword }, ['currentPassword', 'newPassword']);
+
+    // Necesitamos el hash actual → usar findWithPasswordById
+    const student = await studentRepository.findWithPasswordById(id);
+    if (!student) {
+      throw ApiError.notFound('Estudiante no encontrado');
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, student.password);
+    if (!isValid) {
+      throw ApiError.unauthorized('La contraseña actual es incorrecta');
+    }
+
+    if (newPassword.length < 6) {
+      throw ApiError.badRequest('La nueva contraseña debe tener al menos 6 caracteres');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await studentRepository.updatePassword(id, hashedPassword);
+
+    return { message: 'Contraseña actualizada correctamente' };
   }
 
   async deleteStudent(id) {
     const student = await studentRepository.findById(id);
     if (!student) {
-      const error = new Error('Estudiante no encontrado');
-      error.statusCode = 404;
-      throw error;
+      throw ApiError.notFound('Estudiante no encontrado');
     }
 
-    const deleted = await studentRepository.remove(id);
-    return deleted;
+    await studentRepository.delete(id);
+    return { message: 'Estudiante eliminado correctamente' };
   }
 }
 
