@@ -1,31 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
-import { authApi } from '../../services/api.js';
+import { useAuth, LOCAL_USERS } from '../../context/AuthContext.jsx';
 import logImg from "../../assets/login_pictures/log.png";
 
-// Credenciales de demo — el usuario demo@plataforma.com debe existir en la DB
-const DEMO_EMAIL = 'demo@plataforma.com';
-const DEMO_PASS  = 'Test1234!';
-
 export default function Login() {
-  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const validar = async (e) => {
+  const validar = (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const res = await authApi.login(name, password);
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('studentName', res.data.student.name);
-      localStorage.setItem('studentId', res.data.student.id);
-      
-      // Si es el usuario demo (admin), va al CRUD. Los demás van a activity.
-      if (res.data.student.email === DEMO_EMAIL) {
+      const user = login(email, password);
+      // Admin va al CRUD; estudiantes van a actividades
+      if (user.role === 'admin') {
         navigate('/crud');
       } else {
         navigate('/activity');
@@ -37,7 +30,7 @@ export default function Login() {
     }
   };
 
-  const fillDemo = () => { setName(DEMO_EMAIL); setPassword(DEMO_PASS); };
+  const fillDemo = (u) => { setEmail(u.email); setPassword(u.password); };
 
   return (
     <>
@@ -218,8 +211,8 @@ export default function Login() {
                   required
                   placeholder="correo@ejemplo.com"
                   className="eng-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
 
@@ -265,18 +258,35 @@ export default function Login() {
               </div>
             </form>
 
-            {/* Demo credentials hint */}
-            <div className="anim-4 mt-8 rounded-xl px-4 py-3 text-xs text-center"
-                 style={{ background:'#f0f6ff', border:'1.5px dashed #93c5fd', color:'#1d4ed8' }}>
-              <span style={{ fontWeight:700 }}>Demo rápido:</span>{' '}
-              <code style={{ background:'#dbeafe', borderRadius:4, padding:'1px 5px' }}>{DEMO_EMAIL}</code>
-              {' / '}
-              <code style={{ background:'#dbeafe', borderRadius:4, padding:'1px 5px' }}>{DEMO_PASS}</code>
-              {' '}
-              <button type="button" onClick={fillDemo}
-                      style={{ color:'#2558f4', fontWeight:700, textDecoration:'underline', background:'none', border:'none', cursor:'pointer' }}>
-                Usar →
-              </button>
+            {/* Demo credentials */}
+            <div className="anim-4 mt-8">
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-widest mb-2 text-center">Acceso rápido sin backend</p>
+              <div className="flex flex-col gap-2">
+                {LOCAL_USERS.map((u) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => fillDemo(u)}
+                    className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-all"
+                    style={{ background:'#f0f6ff', border:'1.5px dashed #93c5fd', color:'#1d4ed8', cursor:'pointer' }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                      style={{ background: u.role === 'admin' ? 'linear-gradient(135deg,#7c3aed,#a78bfa)' : 'linear-gradient(135deg,#2558f4,#5b82f6)' }}
+                    >
+                      {u.avatar}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold truncate">{u.name}</div>
+                      <div className="text-[0.7rem] opacity-70 truncate">{u.email}</div>
+                    </div>
+                    <span className="text-[0.68rem] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: u.role === 'admin' ? '#ede9fe' : '#dbeafe', color: u.role === 'admin' ? '#7c3aed' : '#2558f4' }}>
+                      {u.role === 'admin' ? 'Admin' : 'Estudiante'}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
