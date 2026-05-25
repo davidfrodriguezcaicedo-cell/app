@@ -1,12 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { periods } from "../../data/Periods";
 import PeriodCard from "../../components/activity/Periodcard";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const TOTAL_ACTIVITIES = periods.reduce((sum, p) => sum + p.activities, 0);
 const TOTAL_COMPLETED = periods.reduce((sum, p) => sum + p.completed, 0);
 
 export default function Activity() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const handleGoStats = (periodId) => {
     navigate(`/stats/${periodId}`);
@@ -45,9 +47,16 @@ export default function Activity() {
 
           <div className="flex items-center gap-2">
             <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-[#2558f4] to-[#5b82f6] flex items-center justify-center text-white text-sm font-bold">
-              D
+              {user?.avatar || 'U'}
             </div>
-            <span className="text-sm text-slate-500 font-semibold">David</span>
+            <span className="text-sm text-slate-500 font-semibold">{user?.name || 'Usuario'}</span>
+            <button
+              onClick={() => { logout(); navigate('/'); }}
+              title="Cerrar sesión"
+              className="ml-1 text-slate-400 hover:text-red-500 transition-colors text-xs font-semibold"
+            >
+              Salir
+            </button>
           </div>
         </nav>
 
