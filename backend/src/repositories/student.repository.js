@@ -11,7 +11,7 @@ class StudentRepository {
     const offset = (page - 1) * limit;
     const searchParam = `%${search}%`;
 
-    // Consulta principal con filtro opcional de búsqueda
+   
     const [rows] = await pool.query(
       `SELECT id, name, email, created_at, updated_at
        FROM students
@@ -21,7 +21,7 @@ class StudentRepository {
       [searchParam, searchParam, limit, offset]
     );
 
-    // Total de registros para calcular páginas
+    
     const [[{ total }]] = await pool.query(
       'SELECT COUNT(*) AS total FROM students WHERE name LIKE ? OR email LIKE ?',
       [searchParam, searchParam]
@@ -48,9 +48,7 @@ class StudentRepository {
     return rows[0] ? new Student(rows[0]) : null;
   }
 
-  /**
-   * Incluye password para que el servicio de auth pueda verificarla.
-   */
+  
   async findByEmail(email) {
     const [rows] = await pool.query(
       'SELECT id, name, email, password, created_at, updated_at FROM students WHERE email = ?',
